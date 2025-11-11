@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 7946694282082962933}
   - component: {fileID: 3585914466749335463}
   m_Layer: 0
-  m_Name: Dynamic Sprite 1
+  m_Name: IgnoreBall
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
