@@ -1754,6 +1754,8 @@ MonoBehaviour:
   distanceToGround: 0.8
   apexHeight: 3.5
   apexTime: 1
+  terminalSpeed: -10
+  coyoteTime: 0
   hasJumped: 0
   direction: 0
 --- !u!4 &1433354315

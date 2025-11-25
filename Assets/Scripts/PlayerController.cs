@@ -19,6 +19,8 @@ public class PlayerController : MonoBehaviour
     public float apexHeight;
     public float apexTime;
     private float jumpVel;
+    public float terminalSpeed = -10f;
+    public float coyoteTime = 0;
     //bool that checks if you've jumped
     public bool hasJumped;
 
@@ -81,8 +83,15 @@ public class PlayerController : MonoBehaviour
         if (IsGrounded() == false)
         {
             player2D.linearVelocityY += gravity * Time.deltaTime;
-            player2D.linearVelocityY = Mathf.Max(player2D.linearVelocityY, gravity); 
+           
         }
+        if (player2D.linearVelocityY < 0) {
+            player2D.linearVelocityY = Mathf.Max(player2D.linearVelocityY, terminalSpeed);
+        }
+
+        
+        
+
     }
 
     private void MovementUpdate(Vector2 playerInput)
@@ -90,7 +99,16 @@ public class PlayerController : MonoBehaviour
         if(IsGrounded())
         JumpInput(playerInput);
 
+        if (IsGrounded() == false)
+            coyoteTime += Time.deltaTime;
 
+
+        if (coyoteTime < 2) 
+            JumpInput(playerInput);
+
+        if(IsGrounded() && coyoteTime > 2)
+            coyoteTime = 0;
+            
     }
 
 
@@ -129,16 +147,22 @@ public class PlayerController : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, distanceToGround, raymask);
 
         Debug.DrawRay(transform.position, Vector2.down, Color.red);
+
+
         if (hit)
         {
             Debug.Log("IsGrounded");
             return true;
         }
-        else
+        else 
         {
             Debug.Log("notGrounded");
             return false;
         }
+
+  
+
+
     }
 
     public FacingDirection GetFacingDirection()
@@ -153,4 +177,19 @@ public class PlayerController : MonoBehaviour
 
         return direction;
     }
+
+
+    //private void OnCollisionExit2D(Collision2D collision)
+    //{
+    //    coyoteTime ++;
+    //    if (coyoteTime > 10)
+    //    {
+    //        coyoteTime = 0;
+    //    }
+    //}
+
+
+
+
+
 }
