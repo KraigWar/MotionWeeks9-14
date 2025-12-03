@@ -20,7 +20,7 @@ public class PlayerController : MonoBehaviour
     private Vector2 velocity = Vector2.zero;
     public LayerMask raymask;
     public float distanceToGround = 1.5f;
-
+    public float distancetoWall = 1.5f;
     [Space(15)]
 
     [Header("Jump Movement")]
@@ -68,7 +68,7 @@ public class PlayerController : MonoBehaviour
         gravity = -2 * apexHeight / (apexTime * apexTime);
         jumpVel = 2 * apexHeight / apexTime;
 
-        Vector2 playerInput = new Vector2(Input.GetAxisRaw("Horizontal"),0);
+        Vector2 playerInput = new Vector2(Input.GetAxisRaw("Horizontal"), 0);
         MovementUpdate(playerInput);
 
         //playerInput = new()
@@ -227,6 +227,28 @@ public class PlayerController : MonoBehaviour
 
 
     }
+
+
+
+    public bool isWalled()
+    {
+        RaycastHit2D wallHit = Physics2D.Raycast(transform.position, Vector2.left, distancetoWall, raymask);
+
+        Debug.DrawRay(transform.position, Vector2.down, Color.red);
+
+
+        if (wallHit)
+        {
+            Debug.Log("I Am On The Wall");
+            return true;
+        }
+        else
+        {
+            Debug.Log("I am Not On The Wall");
+            return false;
+        }
+    }
+
 
     public FacingDirection GetFacingDirection()
     {
