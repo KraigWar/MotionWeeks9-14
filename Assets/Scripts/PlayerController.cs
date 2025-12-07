@@ -4,6 +4,7 @@ using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.LowLevel;
+using UnityEngine.Rendering.UI;
 using UnityEngine.UIElements;
 
 public class PlayerController : MonoBehaviour
@@ -15,12 +16,16 @@ public class PlayerController : MonoBehaviour
     public float maxspeed = 0.5f;
     public float playeraccelerationtime = 0.5f;
     public float decerationTime = 0.25f;
-    private float acceleration;
-    private float deceleration;
-    private Vector2 velocity = Vector2.zero;
     public LayerMask raymask;
-    public float distanceToGround = 1.5f;
-    public float distancetoWall = 1.5f;
+    public LayerMask wallmask;
+    public float distanceToGround = 0.8f;
+    public float distanceToWall = 0.75f;
+    public float jumpAway = 50f;
+    //private float rightWallVel = 1f;
+    public float dashVel;
+    public float dashTimer;
+    public float dashForce = 10f;
+
     [Space(15)]
 
     [Header("Jump Movement")]
@@ -36,7 +41,7 @@ public class PlayerController : MonoBehaviour
     public float timer = 0f;
     //bool that checks if you've jumped
     public bool hasJumped;
-    private bool jumpPressed = false;
+    private bool hasWallJumped;
 
     public FacingDirection direction;
 
@@ -52,7 +57,9 @@ public class PlayerController : MonoBehaviour
         Idle,Walking, Jumping,Dead
     }
 
-    private CharacterState state = CharacterState.Idle;
+   
+
+    //FacingDirection directing = FacingDirection.right;
 
     void Start()
     {
@@ -65,27 +72,28 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        gravity = -2 * apexHeight / (apexTime * apexTime);
+        //if (directing == FacingDirection.right)
+        //    rightWallVel = -1;
+        //else rightWallVel = 1;
+
+            gravity = -2 * apexHeight / (apexTime * apexTime);
         jumpVel = 2 * apexHeight / apexTime;
 
         Vector2 playerInput = new Vector2(Input.GetAxisRaw("Horizontal"), 0);
         MovementUpdate(playerInput);
 
-        //playerInput = new()
+
+        //if (isWalled() == true)
         //{
-        //    x = Input.GetAxisRaw("Horizontal"),
-        //    y = Input.GetButtonDown("Jump") ? 1 : 0
-        //};
-
-        //if(playerInput.y == 1) jumpPressed = true;
-
+        //    hasWallJumped = false;
+        //    walljump();
+        //}
 
     }
 
     private void FixedUpdate()
     {
 
-        // MovementUpdate();
 
         Rigidbody2D player2D = GetComponent<Rigidbody2D>();
 
@@ -100,6 +108,18 @@ public class PlayerController : MonoBehaviour
         }
 
 
+        //Dash Code
+        if(Input.GetKey(KeyCode.LeftShift) && dashTimer < 0.5 && IsGrounded() == false)
+        {
+            startDashing();
+        }
+        if (IsGrounded() && dashTimer > 0.5)
+        {
+            dashTimer = 0;
+        }
+
+
+
 
 
         //Jump code
@@ -109,7 +129,17 @@ public class PlayerController : MonoBehaviour
             hasJumped = false;
 
         }
-
+        //walljump code/////////////
+        if (hasWallJumped)
+        {
+            
+            Vector2 jumpDir = new Vector2(jumpAway, jumpVel);
+            player2D.linearVelocity = jumpDir;
+            //player2D.linearVelocityY = jumpVel;
+            //player2D.linearVelocityX += dashVel;
+            
+        }
+        ////////////////////////////////
         if (IsGrounded() == false)
         {
             player2D.linearVelocityY += gravity * Time.deltaTime;
@@ -118,64 +148,59 @@ public class PlayerController : MonoBehaviour
         if (player2D.linearVelocityY < 0) {
             player2D.linearVelocityY = Mathf.Max(player2D.linearVelocityY, terminalSpeed);
         }
+    }
+
+
+
+    private void startDashing()
+    {
+        
+        Rigidbody2D player2D = GetComponent<Rigidbody2D>();
+
+        player2D.linearVelocityX +=  dashForce * (Input.GetAxisRaw("Horizontal"));
+        dashTimer++;
 
         
-        
-
     }
 
 
-
-
-    private void ProcessWalkInput()
+    //walljumping bool activation///////////
+    private void walljump()
     {
-        //if(playerInput.x != 0)
-        //{
-        //    if (Mathf.Sign(playerInput.x) != Mathf.Sign(velocity.x)) velocity.x *= 1;
-        //    velocity.x += PlayerInput.x * acceleration * Time.fixedDeltaTime;
+       
 
-        //    velocity.x += PlayerInput.x * acceleration * Time.fixedDeltaTime;
-        //    velocity.x = Mathf.Clamp(velocity.x, -maxspeed, maxspeed);
-        //}
-        //else if (Mathf.Abs(velocity.x) > 0.005f)
-        //{
-        //    velocity.x += -Mathf.Sign(velocity.x
-        //}
-
-
+        if (Input.GetKeyDown(KeyCode.Space) && hasWallJumped == false)
+        {
+            hasWallJumped = true;
+         
+        }
     }
-
-    private void ProcessJumpInput()
-    {
-
-    }
-
+    /////////////////////////////////////////////////////////////////
 
     private void MovementUpdate(Vector2 playerInput)
     {
-        if(IsGrounded())
-        JumpInput(playerInput);
+        if (isWalled() && IsGrounded() == false)
+            walljump();
+
+
+        if (IsGrounded())
+        JumpInput();
 
         if (IsGrounded() == false)
             timer += Time.deltaTime;
 
 
         if (timer < coyoteTime) 
-            JumpInput(playerInput);
+            JumpInput();
 
         if(IsGrounded() && timer > 1)
             timer = 0;
 
-
-
-        /////////
-        //ProcessWalkInput();
-       // ProcessJumpInput();
-      //  body2D.linearVelocity = velocity;
+       
     }
 
 
-    private void JumpInput(Vector2 playerInput)
+    private void JumpInput()
     {
         //check that you have jumped
         if(Input.GetKeyDown(KeyCode.Space))
@@ -196,16 +221,7 @@ public class PlayerController : MonoBehaviour
     }
     public bool IsGrounded()
     {
-        //RaycastHit2D hit = Physics2D.Linecast(start + (Vector2)transform.position, end + (Vector2)transform.position);
-
-        //Debug.DrawLine(new Vector2(transform.position.x - col.size.x / 2, transform.position.y - col.size.y / 2), new Vector2(transform.position.x + col.size.x / 2, transform.position.y - col.size.y / 2));
-        //RaycastHit2D hit = Physics2D.Linecast(new Vector2(transform.position.x - col.size.x / 2, transform.position.y - col.size.y / 2), new Vector2(transform.position.x + col.size.x / 2, transform.position.y - col.size.y / 2));
-
-        //Collider2D overlap = Physics2D.OverlapCircle(transform.position, 8f, circlemask, 0f,0f);
-
-        //Vector3 origin = transform.position + Vector3.down * groundCheckDistance;
-
-
+      
 
         RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, distanceToGround, raymask);
 
@@ -224,20 +240,17 @@ public class PlayerController : MonoBehaviour
         }
 
   
-
-
     }
-
-
 
     public bool isWalled()
     {
-        RaycastHit2D wallHit = Physics2D.Raycast(transform.position, Vector2.left, distancetoWall, raymask);
+        RaycastHit2D wallHitLeft = Physics2D.Raycast(transform.position, Vector2.left, distanceToWall, wallmask);
+        RaycastHit2D wallHitRight = Physics2D.Raycast(transform.position, Vector2.right, distanceToWall, wallmask);
 
-        Debug.DrawRay(transform.position, Vector2.down, Color.red);
+        Debug.DrawRay(transform.position, Vector2.left, Color.red);
 
 
-        if (wallHit)
+        if (wallHitLeft || wallHitRight)
         {
             Debug.Log("I Am On The Wall");
             return true;
@@ -262,16 +275,6 @@ public class PlayerController : MonoBehaviour
 
         return direction;
     }
-
-
-    //private void OnCollisionExit2D(Collision2D collision)
-    //{
-    //    coyoteTime ++;
-    //    if (coyoteTime > 10)
-    //    {
-    //        coyoteTime = 0;
-    //    }
-    //}
 
 
 
