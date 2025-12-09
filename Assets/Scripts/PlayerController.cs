@@ -1,11 +1,9 @@
-using Unity.Properties;
-using Unity.VisualScripting;
+
+
 using UnityEditor.Experimental.GraphView;
+
 using UnityEngine;
-using UnityEngine.InputSystem;
-using UnityEngine.InputSystem.LowLevel;
-using UnityEngine.Rendering.UI;
-using UnityEngine.UIElements;
+
 
 public class PlayerController : MonoBehaviour
 {
@@ -17,36 +15,35 @@ public class PlayerController : MonoBehaviour
     public float playeraccelerationtime = 0.5f;
     public float decerationTime = 0.25f;
     public LayerMask raymask;
-    public LayerMask wallmask;
     public float distanceToGround = 0.8f;
-    public float distanceToWall = 0.75f;
-    public float jumpAway = 50f;
-    //private float rightWallVel = 1f;
-    public float dashVel;
-    public float dashTimer;
-    public float dashForce = 10f;
+    public FacingDirection direction;
 
-    [Space(15)]
-
-    [Header("Jump Movement")]
     //public float groundCheckDistance;
+    [Header("Jump Movement")]
     private float gravity;
     public float apexHeight;
     public float apexTime;
     private float jumpVel;
     public float terminalSpeed = -10f;
     public float coyoteTime = 0f;
-
-
-    public float timer = 0f;
-    //bool that checks if you've jumped
     public bool hasJumped;
+
+    //All New variables and references needed////////////////////////////////
+    [Header("Final Assignment Variables")]
     private bool hasWallJumped;
+    public float timer = 0f;
+    //private float rightWallVel = 1f;
+    public float dashTimer;
+    public float dashForce = 10f;
+    public float distanceToWall = 0.75f;
+    public float jumpAway = 50f;
+    public LayerMask wallmask;
+    /////////////////////////////////////////////////////////
 
-    public FacingDirection direction;
+    //public GameObject switches;
 
+    //public Collider2D butCollider;
 
-   
     public enum FacingDirection
     {
         left, right
@@ -76,7 +73,7 @@ public class PlayerController : MonoBehaviour
         //    rightWallVel = -1;
         //else rightWallVel = 1;
 
-            gravity = -2 * apexHeight / (apexTime * apexTime);
+        gravity = -2 * apexHeight / (apexTime * apexTime);
         jumpVel = 2 * apexHeight / apexTime;
 
         Vector2 playerInput = new Vector2(Input.GetAxisRaw("Horizontal"), 0);
@@ -94,21 +91,19 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
 
-
         Rigidbody2D player2D = GetComponent<Rigidbody2D>();
 
         float acceleration = maxspeed / playeraccelerationtime;
-
-
         player2D.linearVelocityX += acceleration * (Input.GetAxisRaw("Horizontal")) * Time.deltaTime;
         player2D.linearVelocityX = Mathf.Clamp(player2D.linearVelocityX, -maxspeed, maxspeed);
-
         if(Input.GetAxisRaw("Horizontal") == 0){
             player2D.linearVelocityX = 0;
         }
 
 
-        //Dash Code
+
+
+        //Horizontal Movement: Dash Code//////////////////////////////
         if(Input.GetKey(KeyCode.LeftShift) && dashTimer < 0.5 && IsGrounded() == false)
         {
             startDashing();
@@ -117,11 +112,11 @@ public class PlayerController : MonoBehaviour
         {
             dashTimer = 0;
         }
-
-
-
-
-
+        //////////////////////////////////////////
+       
+        
+        
+        
         //Jump code
         if (hasJumped)
         {
@@ -129,17 +124,28 @@ public class PlayerController : MonoBehaviour
             hasJumped = false;
 
         }
-        //walljump code/////////////
+
+
+
+
+
+        //Vertical Movement: walljump code/////////////
         if (hasWallJumped)
         {
             
             Vector2 jumpDir = new Vector2(jumpAway, jumpVel);
             player2D.linearVelocity = jumpDir;
+            hasWallJumped = false;
             //player2D.linearVelocityY = jumpVel;
             //player2D.linearVelocityX += dashVel;
             
         }
         ////////////////////////////////
+    
+
+
+
+
         if (IsGrounded() == false)
         {
             player2D.linearVelocityY += gravity * Time.deltaTime;
@@ -152,23 +158,21 @@ public class PlayerController : MonoBehaviour
 
 
 
+    //Horizontal Movement: Dash Method//////////////////////////////////////////
     private void startDashing()
     {
-        
         Rigidbody2D player2D = GetComponent<Rigidbody2D>();
 
         player2D.linearVelocityX +=  dashForce * (Input.GetAxisRaw("Horizontal"));
         dashTimer++;
-
-        
     }
+    ////////////////////////////////////////////////////////////////////////////
 
 
-    //walljumping bool activation///////////
+
+    //Vertical Movement: WallJump Method////////////////////////////////////////
     private void walljump()
     {
-       
-
         if (Input.GetKeyDown(KeyCode.Space) && hasWallJumped == false)
         {
             hasWallJumped = true;
@@ -179,9 +183,10 @@ public class PlayerController : MonoBehaviour
 
     private void MovementUpdate(Vector2 playerInput)
     {
+        //Allowing Jumping to Occur
         if (isWalled() && IsGrounded() == false)
             walljump();
-
+     ////////////////////////////////////////////////////////////////
 
         if (IsGrounded())
         JumpInput();
@@ -195,9 +200,13 @@ public class PlayerController : MonoBehaviour
 
         if(IsGrounded() && timer > 1)
             timer = 0;
-
-       
     }
+
+    //void OnCollisionEnter2D(Collision2D butCollider)
+    //{
+    //    switches.GetComponent<FlippingSwitch>().flipMe();
+    //    Debug.Log(collision.gameObject.name + "i am switched");
+    //}
 
 
     private void JumpInput()
@@ -221,12 +230,10 @@ public class PlayerController : MonoBehaviour
     }
     public bool IsGrounded()
     {
-      
 
         RaycastHit2D hit = Physics2D.Raycast(transform.position, Vector2.down, distanceToGround, raymask);
 
         Debug.DrawRay(transform.position, Vector2.down, Color.red);
-
 
         if (hit)
         {
@@ -237,11 +244,12 @@ public class PlayerController : MonoBehaviour
         {
             Debug.Log("notGrounded");
             return false;
-        }
-
-  
+        }  
     }
 
+
+
+    //Checking If the player is hitting the wall wehn near///////////////////////////////
     public bool isWalled()
     {
         RaycastHit2D wallHitLeft = Physics2D.Raycast(transform.position, Vector2.left, distanceToWall, wallmask);
@@ -261,7 +269,7 @@ public class PlayerController : MonoBehaviour
             return false;
         }
     }
-
+    /////////////////////////////////////////////////////////////////////////
 
     public FacingDirection GetFacingDirection()
     {
